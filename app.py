@@ -1,14 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
-import sqlite3, csv, io
+import sqlite3, csv, io, os
 from pathlib import Path
 from datetime import date
 from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "demo-secret-change-before-deployment"
-DB = Path(__file__).with_name("attendance.db")
+DB = Path(os.environ.get("DATABASE_PATH", str(Path(__file__).with_name("attendance.db"))))
 
 def connect():
+    DB.parent.mkdir(parents=True, exist_ok=True)
     c = sqlite3.connect(DB)
     c.row_factory = sqlite3.Row
     c.execute("""CREATE TABLE IF NOT EXISTS students(
@@ -72,6 +73,50 @@ def students():
     rows=c.execute("SELECT * FROM students WHERE roll_no LIKE ? OR name LIKE ? OR course LIKE ? ORDER BY roll_no",
       (f"%{q}%",f"%{q}%",f"%{q}%")).fetchall()
     c.close(); return render_template("students.html",students=rows,q=q)
+
+
+@app.route("/students/import", methods=["POST"])
+@auth
+def import_students():
+    uploaded = request.files.get("student_file")
+    if not uploaded or not uploaded.filename.lower().endswith(".csv"):
+        flash("Please choose a CSV file.", "error")
+        return redirect(url_for("students"))
+    try:
+        stream = io.StringIO(uploaded.stream.read().decode("utf-8-sig"), newline="")
+        reader = csv.DictReader(stream)
+        required = {"roll_no", "name", "course", "semester"}
+        if not reader.fieldnames or not required.issubset({h.strip().lower() for h in reader.fieldnames}):
+            flash("CSV headers must include: roll_no, name, course, semester (email is optional).", "error")
+            return redirect(url_for("students"))
+        # Normalize header names so common capitalization differences are accepted.
+        reader.fieldnames = [h.strip().lower() for h in reader.fieldnames]
+        c = connect()
+        added = 0
+        skipped = 0
+        for row in reader:
+            values = [str(row.get(k, "") or "").strip() for k in ("roll_no", "name", "course", "semester", "email")]
+            if not all(values[:4]):
+                skipped += 1
+                continue
+            try:
+                c.execute("INSERT INTO students(roll_no,name,course,semester,email) VALUES(?,?,?,?,?)", values)
+                added += 1
+            except sqlite3.IntegrityError:
+                skipped += 1
+        c.commit()
+        c.close()
+        flash(f"Import complete: {added} student(s) added, {skipped} skipped (blank or duplicate roll numbers).", "success")
+    except (UnicodeDecodeError, csv.Error):
+        flash("Could not read this CSV. Save it as UTF-8 CSV and try again.", "error")
+    return redirect(url_for("students"))
+
+@app.route("/students/csv-template")
+@auth
+def student_csv_template():
+    content = "roll_no,name,course,semester,email\\n"
+    return Response(content, mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=students_template.csv"})
 
 @app.route("/students/delete/<int:sid>",methods=["POST"])
 @auth
