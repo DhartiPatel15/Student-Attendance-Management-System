@@ -1,1 +1,12 @@
-
+{% extends "base.html" %}{% block title %}Attendance · AttendEase{% endblock %}{% block content %}
+<div class="heading"><div><p class="eyebrow">DAILY REGISTER</p><h1>Mark attendance</h1><p class="muted">Choose a date and mark each student's status.</p></div></div>
+<section class="panel">
+<form method="get" class="filters"><label>Date<input type="date" name="attend_date" value="{{ selected }}"></label><button class="btn secondary">Load date</button></form>
+{% if students %}
+<form method="post"><input type="hidden" name="attend_date" value="{{ selected }}">
+<div class="scroll"><table><tr><th>Roll No</th><th>Student</th><th>Course</th><th>Status</th></tr>
+{% for s in students %}<tr><td>{{ s.roll_no }}</td><td>{{ s.name }}</td><td>{{ s.course }}</td><td><select name="status_{{ s.id }}"><option value="Present" {{ 'selected' if s.status=='Present' else '' }}>Present</option><option value="Absent" {{ 'selected' if s.status=='Absent' else '' }}>Absent</option></select></td></tr>{% endfor %}
+</table></div><div class="actions"><span class="muted">{{ students|length }} student(s)</span><button class="btn primary">Save attendance</button></div>
+</form>
+{% else %}<p class="empty">No students added yet. Add students before marking attendance.</p>{% endif %}
+</section>{% endblock %}
