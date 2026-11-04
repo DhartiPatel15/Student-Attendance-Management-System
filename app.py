@@ -86,20 +86,39 @@ def student_register():
         else:
             c = connect()
             try:
-                c.execute("""INSERT INTO students(roll_no,name,course,semester,email,password_hash)
-                    VALUES(?,?,?,?,?,?)""",
-                    (roll_no, name, course, semester, email, generate_password_hash(password)))
-                c.commit()
-                student_id = c.execute("SELECT id FROM students WHERE roll_no=?", (roll_no,)).fetchone()["id"]
-                c.close()
-                session.clear()
-                session["role"] = "student"
-                session["student_id"] = student_id
-                flash("Your student account has been created.", "success")
-                return redirect(url_for("student_dashboard"))
+                existing = c.execute("SELECT * FROM students WHERE roll_no=?", (roll_no,)).fetchone()
+                if existing:
+                    if existing["password_hash"]:
+                        flash("This roll number already has an account. Please sign in.", "error")
+                    elif not existing["email"] or existing["email"].strip().lower() != email:
+                        flash("This roll number exists. Enter the email already recorded by faculty, or contact faculty to update it.", "error")
+                    else:
+                        c.execute("UPDATE students SET password_hash=? WHERE id=?",
+                                  (generate_password_hash(password), existing["id"]))
+                        c.commit()
+                        student_id = existing["id"]
+                        c.close()
+                        session.clear()
+                        session["role"] = "student"
+                        session["student_id"] = student_id
+                        flash("Your existing student record is now linked to your secure account.", "success")
+                        return redirect(url_for("student_dashboard"))
+                else:
+                    c.execute("""INSERT INTO students(roll_no,name,course,semester,email,password_hash)
+                        VALUES(?,?,?,?,?,?)""",
+                        (roll_no, name, course, semester, email, generate_password_hash(password)))
+                    c.commit()
+                    student_id = c.execute("SELECT id FROM students WHERE roll_no=?", (roll_no,)).fetchone()["id"]
+                    c.close()
+                    session.clear()
+                    session["role"] = "student"
+                    session["student_id"] = student_id
+                    flash("Your student account has been created.", "success")
+                    return redirect(url_for("student_dashboard"))
             except sqlite3.IntegrityError:
+                flash("This email is already in use. Please sign in or contact faculty.", "error")
+            finally:
                 c.close()
-                flash("This roll number or email is already registered. Please sign in or contact faculty.", "error")
     return render_template("student_register.html")
 
 @app.route("/student/login", methods=["GET", "POST"])
