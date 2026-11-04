@@ -70,6 +70,7 @@
                     <th>Course</th>
                     <th>Semester</th>
                     <th>Email</th>
+                    <th>Portal Account</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -82,6 +83,7 @@
                     <td>{{ student.course }}</td>
                     <td>{{ student.semester }}</td>
                     <td>{{ student.email or '-' }}</td>
+                    <td><span class="pill {{ 'present' if student.account_status == 'Active' else 'absent' }}">{{ student.account_status }}</span></td>
                     <td>
                         <form method="POST"
                               action="{{ url_for('delete_student', sid=student.id) }}"
@@ -92,7 +94,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6">No students found. Add your first student above.</td>
+                    <td colspan="7">No students found. Add your first student above.</td>
                 </tr>
                 {% endfor %}
             </tbody>
