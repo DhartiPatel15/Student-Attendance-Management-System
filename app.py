@@ -167,7 +167,7 @@ def students():
             try:
                 c.execute("INSERT INTO students(roll_no,name,course,semester,email) VALUES(?,?,?,?,?)", vals)
                 c.commit()
-                flash("Student added. The student can create a login using this roll number and email only after account activation is added.", "success")
+                flash("Student added successfully. The student can now register using this roll number and email.", "success")
             except sqlite3.IntegrityError:
                 flash("Roll number already exists.", "error")
         c.close()
@@ -220,6 +220,48 @@ def student_csv_template():
     content = "roll_no,name,course,semester,email\n"
     return Response(content, mimetype="text/csv", headers={"Content-Disposition": "attachment; filename=students_template.csv"})
 
+@app.route("/students/edit/<int:sid>", methods=["GET", "POST"])
+@admin_required
+def edit_student(sid):
+    c = connect()
+    student = c.execute("SELECT * FROM students WHERE id=?", (sid,)).fetchone()
+    if not student:
+        c.close()
+        flash("Student record was not found.", "error")
+        return redirect(url_for("students"))
+    if request.method == "POST":
+        vals = [request.form.get(k, "").strip() for k in ("roll_no", "name", "course", "semester", "email")]
+        if not all(vals[:4]):
+            flash("Roll number, name, course and semester are required.", "error")
+        else:
+            try:
+                c.execute("""UPDATE students SET roll_no=?,name=?,course=?,semester=?,email=?
+                    WHERE id=?""", (*vals, sid))
+                c.commit()
+                c.close()
+                flash("Student details updated successfully.", "success")
+                return redirect(url_for("students"))
+            except sqlite3.IntegrityError:
+                flash("That roll number is already assigned to another student.", "error")
+    c.close()
+    return render_template("edit_student.html", student=student)
+
+
+@app.route("/students/export")
+@admin_required
+def export_students():
+    c = connect()
+    rows = c.execute("""SELECT roll_no,name,course,semester,email FROM students
+        ORDER BY roll_no""").fetchall()
+    c.close()
+    out = io.StringIO()
+    writer = csv.writer(out)
+    writer.writerow(["Roll No", "Name", "Course", "Semester", "Email"])
+    writer.writerows([tuple(row) for row in rows])
+    return Response("\ufeff" + out.getvalue(), mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=students.csv"})
+
+
 @app.route("/students/delete/<int:sid>", methods=["POST"])
 @admin_required
 def delete_student(sid):
@@ -235,6 +277,13 @@ def delete_student(sid):
 @admin_required
 def attendance():
     selected = request.values.get("attend_date", date.today().isoformat())
+    try:
+        parsed_date = date.fromisoformat(selected)
+        if parsed_date > date.today():
+            raise ValueError
+    except (TypeError, ValueError):
+        flash("Please choose a valid date that is not in the future.", "error")
+        selected = date.today().isoformat()
     c = connect()
     if request.method == "POST":
         for s in c.execute("SELECT id FROM students").fetchall():
@@ -255,6 +304,13 @@ def attendance():
 def reports():
     start = request.args.get("start", date.today().replace(day=1).isoformat())
     end = request.args.get("end", date.today().isoformat())
+    try:
+        if date.fromisoformat(start) > date.fromisoformat(end):
+            raise ValueError
+    except (TypeError, ValueError):
+        flash("Please select a valid report date range (From must not be after To).", "error")
+        start = date.today().replace(day=1).isoformat()
+        end = date.today().isoformat()
     c = connect()
     rows = c.execute("""SELECT s.roll_no,s.name,s.course,a.attend_date,a.status FROM attendance a
       JOIN students s ON s.id=a.student_id WHERE a.attend_date BETWEEN ? AND ?
@@ -267,7 +323,14 @@ def reports():
 @app.route("/reports/export")
 @admin_required
 def export_report():
-    start, end = request.args.get("start", ""), request.args.get("end", "")
+    start = request.args.get("start", date.today().replace(day=1).isoformat())
+    end = request.args.get("end", date.today().isoformat())
+    try:
+        if date.fromisoformat(start) > date.fromisoformat(end):
+            raise ValueError
+    except (TypeError, ValueError):
+        flash("Please select a valid report date range before exporting.", "error")
+        return redirect(url_for("reports"))
     c = connect()
     rows = c.execute("""SELECT s.roll_no,s.name,s.course,a.attend_date,a.status FROM attendance a
       JOIN students s ON s.id=a.student_id WHERE a.attend_date BETWEEN ? AND ? ORDER BY a.attend_date DESC""",
