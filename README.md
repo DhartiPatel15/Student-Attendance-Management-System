@@ -55,6 +55,15 @@ python app.py
 
 This is a demonstration account, not a production credential. Do not use the demo credentials or public demo with real student information.
 
+## Demo student login
+
+- **Email:** `student.demo@attendease.test`
+- **Password:** `StudentDemo123!`
+
+This is a fictional sample account automatically created for walkthroughs. It contains no real student information. The `.test` email domain is reserved for testing and cannot receive real email. You can use this account to demonstrate the student dashboard and personal attendance view. The public demo uses sample data only; do not enter real student information.
+
+You can override the demo account values with the private `DEMO_STUDENT_EMAIL` and `DEMO_STUDENT_PASSWORD` environment variables.
+
 ## CSV format
 
 The student import CSV must contain these column headers:
