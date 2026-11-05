@@ -614,3 +614,58 @@ footer {
         width: 100%;
     }
 }
+
+
+/* Student directory layout */
+.form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+}
+.form-grid label {
+    margin-bottom: 2px;
+}
+.form-grid input {
+    min-width: 0;
+}
+.search-form {
+    align-items: center;
+}
+.search-form input {
+    flex: 1 1 260px;
+    min-width: 0;
+    margin-top: 0;
+}
+.search-form .btn {
+    white-space: nowrap;
+}
+.table-wrap form {
+    margin: 0;
+}
+.btn.danger {
+    color: #ff9aa9;
+    border-color: #773a50;
+    background: #ff718510;
+}
+.btn.danger:hover {
+    background: #ff718525;
+}
+.table-wrap td {
+    vertical-align: middle;
+}
+@media (max-width: 900px) {
+    .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 650px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-form .btn {
+        width: 100%;
+    }
+}
