@@ -14,9 +14,10 @@ Password: admin123
 FEATURES
 - Admin login and logout
 - Dashboard with student and daily attendance totals
-- Add, search and delete students
+- Add, view, search, edit and delete students
+- Import students from CSV and export the student directory to CSV
 - Mark Present/Absent attendance by date
-- Date-range attendance reports
+- Date-range attendance reports with date validation
 - Export report to CSV
 - SQLite database created automatically as attendance.db
 
@@ -25,3 +26,9 @@ NOTES
 - Data is stored in attendance.db in this folder. Back it up.
 - This is a local demo project. Demo credentials and secret key must be changed and production hosting/database configured before public deployment.
 - Do not use real student personal information in a public demo.
+
+
+STUDENT PORTAL
+- Students can register and sign in with their email and password.
+- Faculty can add student records first; students can then activate their account using the same roll number and email.
+- Student accounts only see their own dashboard and attendance history.
