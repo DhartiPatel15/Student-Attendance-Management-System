@@ -70,7 +70,10 @@ The email column is optional. Each row must include roll number, name, course an
 - The app creates `attendance.db` automatically.
 - The local database file is excluded from Git using `.gitignore`.
 - On hosting platforms, a local SQLite file may be temporary and may be reset when the service is redeployed or its instance is replaced. For reliable long-term hosted data, configure persistent storage or migrate to a managed database.
-- Set a strong `SECRET_KEY` and replace the demo admin credentials through environment variables before any real-world use.
+- Configure a long random `SECRET_KEY`, `ADMIN_USERNAME`, and `ADMIN_PASSWORD` as private hosting environment variables before deployment.
+- Set `COOKIE_SECURE=true` when the app is served over HTTPS; keep it `false` only for local HTTP development.
+- Session cookies are HTTP-only, SameSite=Lax and expire after eight hours. The app also adds browser security headers and rejects write requests carrying a mismatched Origin header.
+- Origin validation is an additional safeguard, not a replacement for CSRF tokens. Add full CSRF-token protection before using the app with real student data.
 - Use fictional sample student records in the public demo. Do not upload real student personal information.
 
 ## Project structure
