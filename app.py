@@ -35,6 +35,8 @@ def check_same_origin_for_writes():
 DB = Path(os.environ.get("DATABASE_PATH", str(Path(__file__).with_name("attendance.db"))))
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+DEMO_STUDENT_EMAIL = os.environ.get("DEMO_STUDENT_EMAIL", "student.demo@attendease.test").strip().lower()
+DEMO_STUDENT_PASSWORD = os.environ.get("DEMO_STUDENT_PASSWORD", "StudentDemo123!")
 
 def connect():
     DB.parent.mkdir(parents=True, exist_ok=True)
@@ -52,6 +54,21 @@ def connect():
       id INTEGER PRIMARY KEY AUTOINCREMENT, student_id INTEGER NOT NULL,
       attend_date TEXT NOT NULL, status TEXT NOT NULL CHECK(status IN ('Present','Absent')),
       UNIQUE(student_id,attend_date))""")
+    # Keep one fictional student account available for public demonstrations.
+    # The .test email domain is reserved and cannot receive real email.
+    demo = c.execute("SELECT id, password_hash FROM students WHERE roll_no=?", ("DEMO-001",)).fetchone()
+    if demo is None:
+        email_owner = c.execute("SELECT id FROM students WHERE lower(email)=?", (DEMO_STUDENT_EMAIL,)).fetchone()
+        if email_owner is None:
+            c.execute(
+                """INSERT INTO students(roll_no,name,course,semester,email,password_hash)
+                   VALUES(?,?,?,?,?,?)""",
+                ("DEMO-001", "Demo Student", "BCA", "5", DEMO_STUDENT_EMAIL,
+                 generate_password_hash(DEMO_STUDENT_PASSWORD)),
+            )
+    elif not demo["password_hash"]:
+        c.execute("UPDATE students SET email=?, password_hash=? WHERE id=?",
+                  (DEMO_STUDENT_EMAIL, generate_password_hash(DEMO_STUDENT_PASSWORD), demo["id"]))
     c.commit()
     return c
 
