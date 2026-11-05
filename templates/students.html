@@ -48,6 +48,13 @@
 </section>
 
 <section class="panel">
+<div class="panel-title"><div><h2>Import students from CSV</h2><p class="muted">Upload a CSV with roll_no, name, course, semester and optional email columns.</p></div></div>
+<form method="post" action="{{ url_for('import_students') }}" enctype="multipart/form-data" class="search-form">
+<input type="file" name="student_file" accept=".csv,text/csv" required>
+<button class="btn primary" type="submit">Import CSV</button>
+</form></section>
+
+<section class="panel">
     <div class="heading">
         <div>
             <h2>Student Directory ({{ students|length }})</h2>
