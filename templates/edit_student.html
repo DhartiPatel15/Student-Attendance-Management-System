@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Edit Student · AttendEase{% endblock %}
+{% block content %}
+<div class="heading"><div><p class="eyebrow">STUDENT DIRECTORY</p><h1>Edit student</h1><p class="muted">Update the student details below.</p></div><a class="btn secondary" href="{{ url_for('students') }}">← Back to students</a></div>
+<section class="panel"><form method="post"><div class="form-grid">
+<label>Roll Number *<input name="roll_no" value="{{ student.roll_no }}" required></label>
+<label>Full Name *<input name="name" value="{{ student.name }}" required></label>
+<label>Course *<input name="course" value="{{ student.course }}" required></label>
+<label>Semester *<input name="semester" value="{{ student.semester }}" required></label>
+<label>Email<input type="email" name="email" value="{{ student.email or '' }}"></label>
+</div><div class="actions"><a class="btn secondary" href="{{ url_for('students') }}">Cancel</a><button class="btn primary" type="submit">Save changes</button></div></form></section>
+{% endblock %}
